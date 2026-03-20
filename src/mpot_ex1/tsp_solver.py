@@ -57,3 +57,7 @@ if __name__ == "__main__":
         model.optimize()
 
         # TODO read solution values / attributes from `model`
+        print(f"\nTOTAL COSTS: {model.ObjVal}")
+        for v in model.getVars():
+            if v.X:
+                print('%s %g' % (v.VarName, v.X))
