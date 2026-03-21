@@ -1,0 +1,189 @@
+\documentclass[a4paper]{scrartcl}
+
+% i18n
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% layout
+\usepackage[cm]{fullpage}
+\parindent0mm
+
+% math
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{amssymb}
+
+% references
+\usepackage{hyperref}
+
+
+% environment for "exercise"
+\newcounter{exc}
+\newenvironment{exercise}[1]%
+{\refstepcounter{exc}\textbf{Exercise 1.\arabic{exc}} \emph{#1}\\}
+{
+
+\hrulefill\medskip}%
+\renewcommand{\labelenumi}{(\alph{enumi})}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\vc}[1]{\boldsymbol{#1}}
+
+\title{Exercise Sheet 1: TSP}
+\subtitle{Mathematical Programming and Optimization in Transport Logistics}
+\author{Student 1 (student id) \and Student 2 (student id) \and Student 3 (student id)}
+\date{SS 2026}
+
+\begin{document}
+
+\maketitle
+
+\hrulefill\medskip
+
+\begin{itemize}
+	\item Typeset your solution (in, e.g., \LaTeX). You may use the provided \texttt{.tex} template for this.
+	\item Cite all references you used, including any use of generative AI.
+	\item If you work as a team, list all team members as coauthors in the PDF and the source code (e.g., \texttt{pyproject.toml})
+	\item Upload your solution in TUWEL before the deadline. It should consist of \textbf{two files}
+		\begin{itemize}
+			\item a \texttt{.pdf} with your solution to the exercises, and
+			\item an archive (e.g., \texttt{.zip}, \texttt{.tar.gz}) containing your implementation.
+		\end{itemize}
+	\item Upload \textbf{one solution} per team.
+\end{itemize}
+
+\hrulefill\medskip
+
+\begin{exercise}{TSP (\textbf{5 points})}
+	\begin{definition}[Travelling Salesman Problem, TSP]
+		Given
+		a set of cities $N = \{1, \dots, n\}$
+		and costs $c_{ij} \geq 0,\ \forall i,j \in N,\ i \neq j,$ for travelling from city $i$ to city $j$,
+		find a minimum-cost tour that visits every city exactly once and returns to the starting city at the end.
+	\end{definition}
+	
+	
+	Consider the following three formulations for the TSP (as discussed in lecture \texttt{02\_modelling.pdf}).
+	W.l.o.g, we choose city $1$ as the start of our tour.
+	
+	
+	\paragraph{Sequential formulation (SEQ)}
+	
+	Binary variables $x_{ij} \in \{0, 1\}, \forall i,j \in N,\ i \neq j$, indicate whether we travel directly from city $i$ to city $j$.
+	Continuous variables $u_i \in [1, n-1], \forall i \in N \setminus \{1\}$, indicate the position of city $i$ within the selected tour (Note that city $1$ is always implicitly at position $0$).
+	
+	\begin{align}
+		\min\ & \sum_{i,j \in N: i \neq j} c_{ij} x_{ij} \label{eq:seq:obj} \\
+		% common constraints
+		\text{s.t.}\ & \sum_{j \in N \setminus \{i\}} x_{ji} = 1 \label{eq:seq:incoming-arc} & \forall i \in N \\
+		& \sum_{j \in N \setminus \{i\}} x_{ij} = 1 & \forall i \in N \label{eq:seq:outgoing-arc} \\
+		% SEQ constraints
+		& u_i + x_{ij} \leq u_j + (n-2) \cdot (1 - x_{ij}) & \forall i,j \in N \setminus \{1\},\ i \neq j \label{eq:seq:sequencing} \\
+		% variable domains
+		& x_{ij} \in \{0, 1\} & \forall i,j \in N,\ i \neq j \label{eq:seq:x-domain} \\
+		& 1 \leq u_i \leq n - 1 & \forall i \in N \setminus \{1\} \label{eq:seq:u-domain}
+	\end{align}
+	
+	The objective function \eqref{eq:seq:obj} minimizes the total cost of all selected travel legs.
+	Constraints \eqref{eq:seq:incoming-arc} and \eqref{eq:seq:outgoing-arc} ensure that each city is entered and exited exactly once, respectively.
+	
+	Constraints \eqref{eq:seq:sequencing} ensure that if we travel from city $i$ to city $j$, city $j$'s position in the tour is \emph{later} than city $i$'s.
+	If we do \emph{not} travel from city $i$ to city $j$, the corresponding constraint is deactivated by the second term on the RHS (which ensures that the constraint is always trivially satisfied, irrespective of how variables $u_i$ and $u_j$ are set).
+	These constraints prevent subtours by disallowing any cycles not containing node $1$, since the cities in these cycles would have to be assigned ever-increasing tour position variables $u_i$.
+	
+	Constrains \eqref{eq:seq:x-domain} and \eqref{eq:seq:u-domain} define the domains of variables $x_{ij}$ and $u_i$, respectively.
+	
+	
+	\paragraph{Single-commodity flow formulation (SCF)}
+	
+	Binary variables $x_{ij} \in \{0, 1\}, \forall i,j \in N,\ i \neq j$, indicate whether we travel directly from city $i$ to city $j$.
+	Continuous variables $f_{ij} \in [0, n-1], \forall i,j \in N,\ i \neq j$, indicate the amount of ``flow'' from city $i$ to city $j$.
+	
+	\begin{align}
+		\min\ & \sum_{i,j \in N: i \neq j} c_{ij} x_{ij} \label{eq:scf:obj} \\
+		% common constraints
+		\text{s.t.}\ & \sum_{j \in N \setminus \{i\}} x_{ji} = 1 \label{eq:scf:incoming-arc} & \forall i \in N \\
+		& \sum_{j \in N \setminus \{i\}} x_{ij} = 1 & \forall i \in N \label{eq:scf:outgoing-arc} \\
+		% SCF constraints
+		& \sum_{j \in N \setminus \{1\}} f_{1j} = n - 1 \label{eq:scf:flow-generation} \\
+		& \sum_{j \in N \setminus \{i\}} f_{ji} - \sum_{j \in N \setminus \{i\}} f_{ij} = 1 & \forall i \in N \setminus \{1\} \label{eq:scf:flow-consumption} \\
+		& f_{ij} \leq (n-1) \cdot x_{ij} & \forall i,j \in N,\ i \neq j \label{eq:scf:linking} \\
+		% variable domains
+		& x_{ij} \in \{0, 1\} & \forall i,j \in N,\ i \neq j \label{eq:scf:x-domain} \\
+		& 0 \leq f_{ij} \leq n - 1 & \forall i,j \in N,\ i \neq j \label{eq:scf:f-domain}
+	\end{align}
+	
+	The objective function \eqref{eq:scf:obj} minimizes the total cost of all selected travel legs.
+	Constraints \eqref{eq:scf:incoming-arc} and \eqref{eq:scf:outgoing-arc} ensure that each city is entered and exited exactly once, respectively.
+	
+	Constraint \eqref{eq:scf:flow-generation} ensures that exactly $n-1$ units of flow leave city $1$,
+	while constraints \eqref{eq:scf:flow-consumption} ensure that each other city consumes exactly one unit of flow.
+	Constraints \eqref{eq:scf:linking} ensure that flow may only be sent between two cities $i$ and $j$ if we travel directly between them.
+	Together, these constraints prevent subtours by forcing all cities to be connected to city $1$, since the flow consumed by each city must originate at city $1$ and be routed to city $i$ only via city-to-city connections selected by the corresponding $x_{ij}$ variables.
+	
+	Constrains \eqref{eq:scf:x-domain} and \eqref{eq:scf:f-domain} define the domains of variables $x_{ij}$ and $f_{ij}$, respectively.
+	
+	
+	\paragraph{Multi-commodity flow formulation (MCF)}
+	
+	Binary variables $x_{ij} \in \{0, 1\}, \forall i,j \in N,\ i \neq j$, indicate whether we travel directly from city $i$ to city $j$.
+	Continuous variables $f_{ij}^k, \forall i,j \in N,\ i \neq j$, indicate the amount of ``flow'' of type $k$ from city $i$ to city $j$. Intuitively, flow of type $k$ is meant to go from city $1$ to city $k$.
+	
+	\begin{align}
+		\min\ & \sum_{i,j \in N: i \neq j} c_{ij} x_{ij} \label{eq:mcf:obj} \\
+		% common constraints
+		\text{s.t.}\ & \sum_{j \in N \setminus \{i\}} x_{ji} = 1 \label{eq:mcf:incoming-arc} & \forall i \in N \\
+		& \sum_{j \in N \setminus \{i\}} x_{ij} = 1 & \forall i \in N \label{eq:mcf:outgoing-arc} \\
+		% MCF constraints
+		& \sum_{j \in N \setminus \{1\}} f_{1j}^k - \sum_{j \in N \setminus \{1\}} f_{j1}^k = 1 & \forall k \in N \setminus \{1\} \label{eq:mcf:flow-generation} \\
+		& \sum_{j \in N \setminus \{k\}} f_{kj}^k - \sum_{j \in N \setminus \{k\}} f_{jk}^k = -1 & \forall k \in N \setminus \{1\} \label{eq:mcf:flow-consumption} \\
+		& \sum_{j \in N \setminus \{i\}} f_{ij}^k - \sum_{j \in N \setminus \{i\}} f_{ji}^k = 0 & \forall i,k \in N \setminus \{1\},\ i \neq k \label{eq:mcf:flow-conservation} \\
+		& f_{ij}^k \leq x_{ij} & \forall i,j \in N,\ i \neq j,\ k \in N \setminus \{1\} \label{eq:mcf:linking} \\
+		% variable domains
+		& x_{ij} \in \{0, 1\} & \forall i,j \in N,\ i \neq j \label{eq:mcf:x-domain} \\
+		& 0 \leq f_{ij}^k \leq 1 & \forall i,j \in N,\ i \neq j,\ k \in N \setminus \{1\} \label{eq:mcf:f-domain}
+	\end{align}
+	
+	The objective function \eqref{eq:mcf:obj} minimizes the total cost of all selected travel legs.
+	Constraints \eqref{eq:mcf:incoming-arc} and \eqref{eq:mcf:outgoing-arc} ensure that each city is entered and exited exactly once, respectively.
+	
+	Constraints \eqref{eq:mcf:flow-generation} ensure that city $1$ generates one unit of each type of flow $k$, whereas constraints \eqref{eq:mcf:flow-consumption} ensure that city $k$ consumes exactly that unit of $k$-flow.
+	Any flow that enters some city $i$ that is not meant to be consumed there (i.e., if $i \neq k$) is simply sent onward (due to constraints \eqref{eq:mcf:flow-conservation}).
+	Constraints \eqref{eq:mcf:linking} ensure that flow may only be sent between two cities if we travel directly between them.
+	This prevents subtours in much the same way as the SCF formulation by ensuring that all cities are connected to city $1$ (since the flow each city consumes must originate there and can only be sent between two cities if we travel between them).
+	
+	Constrains \eqref{eq:mcf:x-domain} and \eqref{eq:mcf:f-domain} define the domains of variables $x_{ij}$ and $f_{ij}^k$, respectively.
+	
+	
+	\bigskip
+	\begin{itemize}
+		\item \textbf{Implement} each formulation (SEQ, SCF, MCF) with an ILP modelling framework.
+		
+		We recommend you use the provided Python template (using \texttt{gurobipy} as its modelling framework and Gurobi as its ILP solver -- see TUWEL for how to get a license), but you may use any (reasonable) programming language and ILP modelling framework / solver you want.
+		Please not, however, that we do not provide any support for other programming languages, modelling frameworks or ILP solvers.
+		
+		\item Use each implementation to \textbf{solve} the three provided instances
+		(\texttt{ulysses16.tsp}, \texttt{dantzig42.tsp}, and \texttt{att48.tsp}).
+		For each instance and formulation, state
+		\begin{itemize}
+			\item the number of variables (total, continuous, integer, binary),
+			\item the number of constraints,
+			\item the required runtime and maximum memory consumption,
+			\item the number of branch-and-bound nodes explored,
+			\item the optimal objective value, and
+			\item an optimal tour (i.e., the sequence in which the cities are visited).
+		\end{itemize}
+		
+		Note that solving some instances with some models may take a few minutes.
+	\end{itemize}
+\end{exercise}
+
+
+\end{document}
