@@ -63,7 +63,6 @@ def create_model(model: Model):
 
     # SCF
     elif formulation == "scf":
-        # TODO add your SCF constraints here
         f = model.addVars(
             [(i, j)
                 for i in range(1, N+1)
@@ -92,7 +91,6 @@ def create_model(model: Model):
 
     # MCF
     elif formulation == "mcf":
-        # TODO add your MCF constraints here
         f = model.addVars(
             [(i, j, k)
                 for i in range(1, N+1)
@@ -104,7 +102,6 @@ def create_model(model: Model):
             vtype=GRB.CONTINUOUS,
             name="flow"
         )
-        print(len(f))
 
         model.addConstrs(
             ((quicksum(f[1, j, k] for j in range(2, N+1)) - quicksum(f[j, 1, k] for j in range(2, N+1))) == 1

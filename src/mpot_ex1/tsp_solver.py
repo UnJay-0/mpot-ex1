@@ -87,4 +87,4 @@ if __name__ == "__main__":
                     current = j
                     break
 
-        print(f"Tour:", tour)
+        print("Tour:", tour)
