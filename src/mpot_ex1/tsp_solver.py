@@ -57,7 +57,22 @@ if __name__ == "__main__":
         model.optimize()
 
         # TODO read solution values / attributes from `model`
-        print(f"\nTOTAL COSTS: {model.ObjVal}")
+        # – the number of variables (total, continuous, integer, binary),
+        print(f"\nTotal number of variables: {model.NumVars}")
+        print(f"Number of continous variables: {model.NumVars - model.NumIntVars}")
+        print(f"Number of int variables: {model.NumIntVars - model.NumBinVars}")
+        print(f"Number of binary variables: {model.NumBinVars}")
+        # – the number of constraints,
+        print(f"\nTotal number of constraints: {model.NumConstrs}")
+        # – the required runtime and maximum memory consumption,
+        print(f"Runtime: {model.Runtime}")
+        print(f"Memory consumption: {model.MemUsed}")
+        # – the number of branch-and-bound nodes explored,
+        print(f"Number of branch-and-bound nodes explored: {model.NodeCount}")
+        # – the optimal objective value, and
+        print(f"Total costs: {model.ObjVal}")
+        # – an optimal tour (i.e., the sequence in which the cities are visited).
+
         for v in model.getVars():
             if v.X:
                 print('%s %g' % (v.VarName, v.X))
