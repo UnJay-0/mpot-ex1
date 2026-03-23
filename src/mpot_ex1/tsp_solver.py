@@ -73,6 +73,18 @@ if __name__ == "__main__":
         print(f"Total costs: {model.ObjVal}")
         # – an optimal tour (i.e., the sequence in which the cities are visited).
 
-        for v in model.getVars():
-            if v.X:
-                print('%s %g' % (v.VarName, v.X))
+        x = model._x
+
+        edges_used = [(i, j) for (i, j) in x.keys() if x[i, j].X > 0.5]
+
+        tour = [1]
+        current = 1
+
+        while len(tour) < len(graph.nodes()):
+            for (i, j) in edges_used:
+                if i == current:
+                    tour.append(j)
+                    current = j
+                    break
+
+        print(f"Tour:", tour)
