@@ -49,13 +49,12 @@ def create_model(model: Model):
     # SEQ
     if formulation == "seq":
         u = model.addVars(
-            [i for i in range(2, N+1)],
+            list(range(2, N+1)),
             lb=1,
             ub=N-1,
             vtype=GRB.CONTINUOUS,
             name="order"
         )
-        # TODO add your SEQ constraints here
         model.addConstrs(((u[i] + x[i, j]) <= (u[j] + (N-2) * (1-x[i, j]))
             for i in range(2, N+1)
             for j in range(2, N+1) if i != j),
@@ -124,9 +123,9 @@ def create_model(model: Model):
 
         model.addConstrs(
             (f[i, j, k] <= x[i, j]
-            for i in range(1, N+1)
-            for j in range(1, N+1)
-            for k in range(2, N+1)
-            if i != j),
+                for i in range(1, N+1)
+                for j in range(1, N+1)
+                for k in range(2, N+1)
+                if i != j),
             name="flow_if_travel"
         )

@@ -4,8 +4,8 @@ version = "1.0.0"
 description = "Code for MPOT, exercise sheet 1"
 readme = "README.md"
 authors = [
-    { name = "Jonathan Junior Agyekum", email = "e12537832@student.tuwien.ac.at" }
-    { name = "Cosette Ioana Lupu", email = "e12511257@student.tuwien.ac.at" }
+    { name = "Jonathan Junior Agyekum", email = "e12537832@student.tuwien.ac.at" },
+    { name = "Cosette Ioana Lupu", email = "e12511257@student.tuwien.ac.at" },
     { name = "Viktor Samuel Podhradsky", email = "e12515276@student.tuwien.ac.at" }
 ]
 requires-python = ">=3.14"
